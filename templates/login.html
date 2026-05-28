@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+
+{% block title %}Admin Login - Lumière Salon{% endblock %}
+
+{% block content %}
+<section class="min-h-[700px] flex items-center justify-center bg-surface-container-low px-container-margin-mobile">
+    <div class="max-w-md w-full bg-white/70 backdrop-blur-xl border border-border-subtle rounded-2xl p-8 md:p-10 shadow-[0px_4px_24px_rgba(0,0,0,0.03)] space-y-6">
+        
+        <!-- Header -->
+        <div class="text-center space-y-2">
+            <span class="material-symbols-outlined text-primary text-5xl">admin_panel_settings</span>
+            <h2 class="font-bold text-2xl text-on-surface">Panel de Control</h2>
+            <p class="text-xs text-secondary">Inicia sesión para gestionar la agenda y servicios</p>
+        </div>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="p-4 bg-error-container text-on-error-container rounded-xl text-xs font-semibold flex items-center gap-2 border border-error/10">
+                    <span class="material-symbols-outlined text-lg">error</span>
+                    <div>{{ messages[0] }}</div>
+                </div>
+            {% endif %}
+        {% endwith %}
+        
+        <div id="js-error-box" class="hidden p-4 bg-error-container text-on-error-container rounded-xl text-xs font-semibold flex items-center gap-2 border border-error/10">
+            <span class="material-symbols-outlined text-lg">error</span>
+            <div id="js-error-message"></div>
+        </div>
+
+        <!-- Form -->
+        <form id="login-form" method="POST" action="/login" class="space-y-5">
+            <div class="space-y-1.5">
+                <label class="font-bold text-xs text-on-surface-variant block">Nombre de Usuario</label>
+                <div class="relative">
+                    <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-secondary text-lg">person</span>
+                    <input name="usuario" id="username-field" class="w-full pl-11 pr-4 py-3 rounded-lg border border-border-subtle focus:border-primary focus:ring-1 focus:ring-primary outline-none bg-white text-sm transition-all" placeholder="Usuario" type="text" required/>
+                </div>
+            </div>
+            
+            <div class="space-y-1.5">
+                <label class="font-bold text-xs text-on-surface-variant block">Contraseña</label>
+                <div class="relative">
+                    <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-secondary text-lg">lock</span>
+                    <input name="password" id="password-field" class="w-full pl-11 pr-4 py-3 rounded-lg border border-border-subtle focus:border-primary focus:ring-1 focus:ring-primary outline-none bg-white text-sm transition-all" placeholder="••••••••" type="password" required/>
+                </div>
+            </div>
+
+            <div class="pt-2">
+                <button class="w-full bg-primary-container text-white py-3.5 rounded-xl font-bold shadow-lg shadow-primary-container/20 hover:scale-[1.01] active:scale-95 transition-all duration-300 flex items-center justify-center gap-2" type="submit">
+                    Ingresar
+                    <span class="material-symbols-outlined text-xl">login</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</section>
+
+<script>
+    document.getElementById('login-form').addEventListener('submit', (e) => {
+        // Hacemos el envío vía JSON para una experiencia premium fluida, con fallback
+        e.preventDefault();
+        
+        const username = document.getElementById('username-field').value;
+        const password = document.getElementById('password-field').value;
+        const errorBox = document.getElementById('js-error-box');
+        const errorMessage = document.getElementById('js-error-message');
+        
+        errorBox.classList.add('hidden');
+        
+        fetch('/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({ usuario: username, password: password })
+        })
+        .then(res => res.json().then(data => ({ status: res.status, body: data })))
+        .then(res => {
+            if (res.status === 200 && res.body.success) {
+                window.location.href = res.body.redirect;
+            } else {
+                errorMessage.innerText = res.body.error || 'Credenciales incorrectas';
+                errorBox.classList.remove('hidden');
+            }
+        })
+        .catch(err => {
+            console.error("Error en login:", err);
+            // Fallback al submit tradicional si hay algún problema
+            e.target.submit();
+        });
+    });
+</script>
+{% endblock %}

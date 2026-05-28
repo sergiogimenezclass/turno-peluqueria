@@ -1,0 +1,437 @@
+{% extends 'base.html' %}
+
+{% block title %}Reservar Turno - Lumière Salon{% endblock %}
+
+{% block head %}
+<style>
+    .step-transition {
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .glass-card {
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(0, 0, 0, 0.08);
+    }
+    .hide-scrollbar::-webkit-scrollbar {
+        display: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<main class="max-w-4xl mx-auto px-container-margin-mobile md:px-container-margin-desktop py-stack-lg pb-32">
+    <div class="flex flex-col gap-stack-lg items-center mt-6">
+        <!-- Hero Header -->
+        <div class="text-center space-y-stack-sm max-w-xl">
+            <h2 class="font-bold text-3xl text-on-background">Reserva tu experiencia</h2>
+            <p class="text-sm text-secondary">Selecciona los detalles de tu cita y confirma tu turno en minutos.</p>
+        </div>
+
+        <!-- Booking Stepper Card -->
+        <div class="w-full glass-card rounded-xl p-6 md:p-10 shadow-[0px_4px_20px_rgba(0,0,0,0.04)] relative overflow-hidden">
+            
+            <!-- Progress Indicator -->
+            <div class="flex justify-between items-center mb-10 relative px-4">
+                <div class="absolute top-1/2 left-0 w-full h-[2px] bg-surface-variant -translate-y-1/2 z-0"></div>
+                <div class="absolute top-1/2 left-0 w-0 h-[2px] bg-primary-container -translate-y-1/2 z-0 transition-all duration-500" id="progress-bar"></div>
+                
+                <div class="relative z-10 bg-white rounded-full p-2 border-2 border-primary-container flex items-center justify-center w-10 h-10 shadow-sm transition-all cursor-pointer" data-step="1" onclick="goToStep(1)">
+                    <span class="font-bold text-sm text-primary-container">1</span>
+                </div>
+                <div class="relative z-10 bg-surface-variant rounded-full p-2 border-2 border-transparent flex items-center justify-center w-10 h-10 shadow-sm transition-all" data-step="2">
+                    <span class="font-bold text-sm text-secondary">2</span>
+                </div>
+                <div class="relative z-10 bg-surface-variant rounded-full p-2 border-2 border-transparent flex items-center justify-center w-10 h-10 shadow-sm transition-all" data-step="3">
+                    <span class="font-bold text-sm text-secondary">3</span>
+                </div>
+                <div class="relative z-10 bg-surface-variant rounded-full p-2 border-2 border-transparent flex items-center justify-center w-10 h-10 shadow-sm transition-all" data-step="4">
+                    <span class="font-bold text-sm text-secondary">4</span>
+                </div>
+            </div>
+
+            <!-- Steps Form -->
+            <form id="booking-form" class="space-y-6">
+                
+                <!-- Step 1: Servicio -->
+                <div class="step-content space-y-6 block" id="step-1">
+                    <h3 class="font-bold text-xl mb-4 text-on-surface">1. Selecciona un servicio</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="services-step-container">
+                        <!-- Carga dinámica -->
+                        <div class="col-span-full text-center py-8 text-secondary">
+                            <span class="material-symbols-outlined animate-spin text-3xl">sync</span>
+                            <p class="mt-2 text-sm">Cargando servicios disponibles...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 2: Fecha -->
+                <div class="step-content space-y-6 hidden" id="step-2">
+                    <div class="flex items-center gap-stack-sm mb-4">
+                        <button class="material-symbols-outlined text-secondary hover:bg-surface-variant p-1 rounded-full" onclick="goToStep(1)" type="button">arrow_back</button>
+                        <h3 class="font-bold text-xl">2. Selecciona la fecha</h3>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-3" id="dates-container">
+                        <!-- Las fechas se generarán dinámicamente -->
+                    </div>
+                </div>
+
+                <!-- Step 3: Horario -->
+                <div class="step-content space-y-6 hidden" id="step-3">
+                    <div class="flex items-center gap-stack-sm mb-4">
+                        <button class="material-symbols-outlined text-secondary hover:bg-surface-variant p-1 rounded-full" onclick="goToStep(2)" type="button">arrow_back</button>
+                        <h3 class="font-bold text-xl">3. Horarios disponibles</h3>
+                    </div>
+                    
+                    <div class="grid grid-cols-3 sm:grid-cols-4 gap-3" id="hours-container">
+                        <!-- Carga dinámica -->
+                    </div>
+                    <div id="no-hours-message" class="hidden text-center py-8 bg-primary/5 rounded-xl border border-primary/10">
+                        <span class="material-symbols-outlined text-primary text-4xl mb-2">event_busy</span>
+                        <p class="font-semibold text-on-surface">No hay horarios disponibles para esta fecha</p>
+                        <p class="text-xs text-secondary mt-1">Por favor selecciona otro día.</p>
+                    </div>
+                </div>
+
+                <!-- Step 4: Datos Personales -->
+                <div class="step-content space-y-8 hidden" id="step-4">
+                    <div class="flex items-center gap-stack-sm mb-4">
+                        <button class="material-symbols-outlined text-secondary hover:bg-surface-variant p-1 rounded-full" onclick="goToStep(3)" type="button">arrow_back</button>
+                        <h3 class="font-bold text-xl">4. Completa tus datos</h3>
+                    </div>
+                    
+                    <!-- Resumen del turno seleccionado -->
+                    <div class="bg-primary/5 border border-primary-container/20 rounded-xl p-4 flex flex-col md:flex-row justify-between md:items-center gap-2 text-sm">
+                        <div>
+                            <span class="font-bold text-primary">Servicio:</span> <span id="summary-service" class="font-semibold text-on-surface">Cargando...</span>
+                        </div>
+                        <div>
+                            <span class="font-bold text-primary">Fecha:</span> <span id="summary-date" class="font-semibold text-on-surface">Cargando...</span>
+                        </div>
+                        <div>
+                            <span class="font-bold text-primary">Horario:</span> <span id="summary-time" class="font-semibold text-on-surface">Cargando...</span>
+                        </div>
+                    </div>
+
+                    <div class="space-y-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-gutter">
+                            <div class="relative">
+                                <label class="font-semibold text-xs text-on-surface-variant block mb-2">Nombre *</label>
+                                <input id="client-name" class="w-full px-4 py-3 rounded-lg border border-border-subtle focus:border-primary-container focus:ring-1 focus:ring-primary-container outline-none transition-all bg-transparent text-sm" placeholder="Ej. Juan" type="text" required/>
+                            </div>
+                            <div class="relative">
+                                <label class="font-semibold text-xs text-on-surface-variant block mb-2">Apellido *</label>
+                                <input id="client-lastname" class="w-full px-4 py-3 rounded-lg border border-border-subtle focus:border-primary-container focus:ring-1 focus:ring-primary-container outline-none transition-all bg-transparent text-sm" placeholder="Ej. Pérez" type="text" required/>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-gutter">
+                            <div class="relative">
+                                <label class="font-semibold text-xs text-on-surface-variant block mb-2">Teléfono de contacto *</label>
+                                <input id="client-phone" class="w-full px-4 py-3 rounded-lg border border-border-subtle focus:border-primary-container focus:ring-1 focus:ring-primary-container outline-none transition-all bg-transparent text-sm" placeholder="+54 9 11 0000 0000" type="tel" required/>
+                            </div>
+                            <div class="relative">
+                                <label class="font-semibold text-xs text-on-surface-variant block mb-2">Correo Electrónico</label>
+                                <input id="client-email" class="w-full px-4 py-3 rounded-lg border border-border-subtle focus:border-primary-container focus:ring-1 focus:ring-primary-container outline-none transition-all bg-transparent text-sm" placeholder="juan.perez@email.com" type="email"/>
+                            </div>
+                        </div>
+                        <div class="pt-4">
+                            <button class="w-full bg-primary-container text-white py-4 rounded-xl font-bold shadow-lg shadow-primary-container/20 hover:scale-[1.01] active:scale-95 transition-all duration-300 flex items-center justify-center gap-2" type="submit">
+                                <span class="material-symbols-outlined text-xl">check_circle</span>
+                                Confirmar Reserva
+                            </button>
+                            <p class="text-center text-[10px] text-secondary mt-4">Al confirmar, aceptas nuestros términos de servicio y política de privacidad.</p>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Success Modal (Hidden by default) -->
+        <div id="success-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md hidden transition-all duration-500">
+            <div class="bg-white rounded-2xl p-8 max-w-md w-full text-center shadow-2xl space-y-6 transform scale-95 transition-all duration-300">
+                <div class="w-20 h-20 bg-status-success/10 text-status-success rounded-full flex items-center justify-center mx-auto">
+                    <span class="material-symbols-outlined text-5xl">task_alt</span>
+                </div>
+                <div class="space-y-2">
+                    <h3 class="font-bold text-2xl text-on-surface">¡Reserva Registrada!</h3>
+                    <p class="text-sm text-secondary leading-relaxed">Tu turno en <span class="font-bold text-primary">Lumière Salon</span> ha sido solicitado con éxito y se encuentra en estado <span class="px-2 py-0.5 bg-primary/10 text-primary rounded-full text-xs font-bold">pendiente</span>.</p>
+                </div>
+                <div class="bg-surface-container-low rounded-xl p-4 text-left text-xs space-y-2 border border-border-subtle">
+                    <div class="flex justify-between"><span class="text-secondary">Servicio:</span><span id="modal-service" class="font-bold text-on-surface">Corte Premium</span></div>
+                    <div class="flex justify-between"><span class="text-secondary">Fecha y Hora:</span><span id="modal-datetime" class="font-bold text-on-surface">24/05/2026 - 16:30 hs</span></div>
+                    <div class="flex justify-between"><span class="text-secondary">Cliente:</span><span id="modal-client" class="font-bold text-on-surface">Juan Pérez</span></div>
+                </div>
+                <button onclick="window.location.href='/'" class="w-full bg-primary text-white py-3 rounded-xl font-bold hover:bg-primary-container transition-colors shadow-md">
+                    Entendido
+                </button>
+            </div>
+        </div>
+
+        <!-- Features -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-gutter w-full mt-stack-lg">
+            <div class="flex flex-col items-center text-center p-6 bg-white rounded-xl shadow-[0px_4px_20px_rgba(0,0,0,0.02)] border border-border-subtle">
+                <span class="material-symbols-outlined text-primary-container mb-4 text-3xl">verified</span>
+                <h4 class="font-bold text-sm text-on-surface mb-1">Calidad Garantizada</h4>
+                <p class="text-xs text-secondary leading-relaxed">Expertos certificados con años de experiencia en el rubro.</p>
+            </div>
+            <div class="flex flex-col items-center text-center p-6 bg-white rounded-xl shadow-[0px_4px_20px_rgba(0,0,0,0.02)] border border-border-subtle">
+                <span class="material-symbols-outlined text-primary-container mb-4 text-3xl">schedule</span>
+                <h4 class="font-bold text-sm text-on-surface mb-1">Gestión Ágil</h4>
+                <p class="text-xs text-secondary leading-relaxed">Modifica o cancela tu cita hasta 24hs antes sin costo.</p>
+            </div>
+            <div class="flex flex-col items-center text-center p-6 bg-white rounded-xl shadow-[0px_4px_20px_rgba(0,0,0,0.02)] border border-border-subtle">
+                <span class="material-symbols-outlined text-primary-container mb-4 text-3xl">star</span>
+                <h4 class="font-bold text-sm text-on-surface mb-1">Experiencia Única</h4>
+                <p class="text-xs text-secondary leading-relaxed">Disfrutá de un ambiente premium diseñado para tu confort.</p>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script>
+    // Variables de estado del formulario
+    let currentStep = 1;
+    let selectedService = null;
+    let selectedServiceName = '';
+    let selectedDate = '';
+    let selectedDateLabel = '';
+    let selectedTime = '';
+
+    // Cargar servicios base
+    document.addEventListener("DOMContentLoaded", () => {
+        loadServices();
+        generateDates();
+    });
+
+    function loadServices() {
+        const container = document.getElementById("services-step-container");
+        fetch('/api/servicios')
+            .then(res => res.json())
+            .then(servicios => {
+                container.innerHTML = '';
+                
+                const icons = {
+                    'Corte Premium': 'content_cut',
+                    'Color & Balayage': 'palette',
+                    'Tratamiento Barba': 'face',
+                    'Tratamiento Facial': 'spa'
+                };
+                
+                servicios.forEach(s => {
+                    const iconName = icons[s.nombre] || 'spa';
+                    const sCard = `
+                        <button class="flex items-center gap-4 p-4 rounded-xl border border-border-subtle hover:border-primary-container hover:bg-primary/5 transition-all text-left group" onclick="selectService(${s.id}, '${s.nombre}')" type="button">
+                            <div class="w-12 h-12 rounded-lg bg-surface-container flex items-center justify-center group-hover:bg-primary-container/20 transition-colors">
+                                <span class="material-symbols-outlined text-primary-container text-2xl">${iconName}</span>
+                            </div>
+                            <div>
+                                <p class="font-bold text-sm text-on-surface">${s.nombre}</p>
+                                <p class="text-xs text-secondary">${s.duracion} min • $${s.precio.toLocaleString('es-AR')}</p>
+                            </div>
+                        </button>
+                    `;
+                    container.insertAdjacentHTML('beforeend', sCard);
+                });
+            })
+            .catch(err => {
+                container.innerHTML = '<p class="text-center text-error col-span-full py-8">Error al cargar servicios. Reintente por favor.</p>';
+            });
+    }
+
+    function selectService(id, name) {
+        selectedService = id;
+        selectedServiceName = name;
+        document.getElementById('summary-service').innerText = name;
+        goToStep(2);
+    }
+
+    // Generar los próximos 14 días (excluyendo domingos)
+    function generateDates() {
+        const container = document.getElementById('dates-container');
+        container.innerHTML = '';
+        
+        const days = ['Dom', 'Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab'];
+        const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+        
+        let added = 0;
+        let offset = 1; // Comenzar a partir de mañana
+        
+        while (added < 10) {
+            const d = new Date();
+            d.setDate(d.getDate() + offset);
+            
+            // Excluir domingos (0)
+            if (d.getDay() !== 0) {
+                const dayLabel = days[d.getDay()];
+                const dayNum = d.getDate();
+                const monthLabel = months[d.getMonth()];
+                const formattedDate = d.toISOString().split('T')[0]; // YYYY-MM-DD
+                const fullLabel = `${dayLabel} ${dayNum} ${monthLabel}`;
+                
+                const card = `
+                    <button class="flex flex-col items-center justify-center p-4 rounded-xl border border-border-subtle hover:border-primary-container hover:bg-primary/5 transition-all text-center gap-1 font-semibold text-sm group" onclick="selectDate('${formattedDate}', '${fullLabel}')" type="button">
+                        <span class="text-xs text-secondary group-hover:text-primary transition-colors">${dayLabel}</span>
+                        <span class="text-2xl font-bold text-on-surface">${dayNum}</span>
+                        <span class="text-[10px] text-secondary">${monthLabel}</span>
+                    </button>
+                `;
+                container.insertAdjacentHTML('beforeend', card);
+                added++;
+            }
+            offset++;
+        }
+    }
+
+    function selectDate(date, label) {
+        selectedDate = date;
+        selectedDateLabel = label;
+        document.getElementById('summary-date').innerText = label;
+        loadHours(date);
+    }
+
+    // Cargar horarios libres desde la API para el día y servicio
+    function loadHours(date) {
+        const container = document.getElementById('hours-container');
+        const noHours = document.getElementById('no-hours-message');
+        
+        container.innerHTML = `
+            <div class="col-span-full text-center py-8 text-secondary">
+                <span class="material-symbols-outlined animate-spin text-3xl">sync</span>
+                <p class="mt-2 text-sm">Consultando turnos libres...</p>
+            </div>
+        `;
+        noHours.classList.add('hidden');
+        container.classList.remove('hidden');
+
+        goToStep(3);
+
+        fetch(`/api/horarios-disponibles?fecha=${date}&servicio_id=${selectedService}`)
+            .then(res => res.json())
+            .then(hours => {
+                container.innerHTML = '';
+                if (hours && hours.length > 0) {
+                    hours.forEach(h => {
+                        const btn = `
+                            <button class="py-3 px-4 rounded-lg border border-border-subtle hover:border-primary-container hover:bg-primary/5 transition-all text-center font-bold text-sm text-on-surface" onclick="selectTime('${h}')" type="button">
+                                ${h}
+                            </button>
+                        `;
+                        container.insertAdjacentHTML('beforeend', btn);
+                    });
+                } else {
+                    container.classList.add('hidden');
+                    noHours.classList.remove('hidden');
+                }
+            })
+            .catch(err => {
+                container.innerHTML = '<p class="text-center text-error col-span-full py-8">Error al consultar horarios.</p>';
+            });
+    }
+
+    function selectTime(time) {
+        selectedTime = time;
+        document.getElementById('summary-time').innerText = time + ' hs';
+        goToStep(4);
+    }
+
+    // Navegar y animar pasos
+    function goToStep(step) {
+        if (step > 1 && !selectedService) return;
+        if (step > 2 && !selectedDate) return;
+        if (step > 3 && !selectedTime) return;
+
+        // Ocultar contenidos
+        document.querySelectorAll('.step-content').forEach(el => el.classList.add('hidden'));
+        
+        // Mostrar paso activo
+        const target = document.getElementById(`step-${step}`);
+        target.classList.remove('hidden');
+        target.classList.add('animate-in', 'fade-in', 'duration-500');
+
+        // Actualizar barra de progreso
+        const progressBar = document.getElementById('progress-bar');
+        const percentage = ((step - 1) / 3) * 100;
+        progressBar.style.width = `${percentage}%`;
+
+        // Actualizar indicadores
+        document.querySelectorAll('[data-step]').forEach(indicator => {
+            const indicatorStep = parseInt(indicator.getAttribute('data-step'));
+            if (indicatorStep < step) {
+                indicator.classList.remove('border-primary-container', 'bg-white');
+                indicator.classList.add('bg-primary-container', 'border-primary-container');
+                indicator.querySelector('span').classList.remove('text-primary-container');
+                indicator.querySelector('span').classList.add('text-white');
+                indicator.querySelector('span').innerHTML = 'check';
+                indicator.querySelector('span').classList.add('material-symbols-outlined');
+            } else if (indicatorStep === step) {
+                indicator.classList.remove('bg-surface-variant', 'border-transparent', 'bg-primary-container');
+                indicator.classList.add('bg-white', 'border-primary-container');
+                indicator.querySelector('span').classList.remove('text-white', 'text-secondary');
+                indicator.querySelector('span').classList.add('text-primary-container');
+                indicator.querySelector('span').classList.remove('material-symbols-outlined');
+                indicator.querySelector('span').innerText = indicatorStep;
+            } else {
+                indicator.classList.add('bg-surface-variant', 'border-transparent');
+                indicator.classList.remove('bg-white', 'border-primary-container', 'bg-primary-container');
+                indicator.querySelector('span').classList.add('text-secondary');
+                indicator.querySelector('span').classList.remove('text-primary-container', 'text-white', 'material-symbols-outlined');
+                indicator.querySelector('span').innerText = indicatorStep;
+            }
+        });
+
+        currentStep = step;
+        window.scrollTo({ top: 100, behavior: 'smooth' });
+    }
+
+    // Submit del formulario
+    document.getElementById('booking-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+
+        const nombre = document.getElementById('client-name').value;
+        const apellido = document.getElementById('client-lastname').value;
+        const telefono = document.getElementById('client-phone').value;
+        const email = document.getElementById('client-email').value;
+
+        const payload = {
+            nombre,
+            apellido,
+            telefono,
+            email,
+            servicio_id: selectedService,
+            fecha: selectedDate,
+            horario: selectedTime
+        };
+
+        fetch('/api/reservar', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                // Llenar datos de confirmación del modal
+                document.getElementById('modal-service').innerText = selectedServiceName;
+                document.getElementById('modal-datetime').innerText = `${selectedDateLabel} - ${selectedTime} hs`;
+                document.getElementById('modal-client').innerText = `${nombre} ${apellido}`;
+                
+                // Mostrar modal de éxito
+                const modal = document.getElementById('success-modal');
+                modal.classList.remove('hidden');
+                setTimeout(() => {
+                    modal.querySelector('.transform').classList.remove('scale-95');
+                    modal.querySelector('.transform').classList.add('scale-100');
+                }, 50);
+            } else {
+                alert(data.error || 'Ocurrió un error al reservar el turno.');
+            }
+        })
+        .catch(err => {
+            console.error("Error al registrar reserva:", err);
+            alert('Error en el servidor al enviar la reserva.');
+        });
+    });
+</script>
+{% endblock %}

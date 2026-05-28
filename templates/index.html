@@ -1,0 +1,168 @@
+{% extends 'base.html' %}
+
+{% block title %}Lumière Salon - Tu Estilo Comienza Aquí{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="relative min-h-[700px] flex items-center overflow-hidden bg-surface-container-low">
+    <div class="container mx-auto px-container-margin-mobile md:px-container-margin-desktop grid grid-cols-1 lg:grid-cols-12 gap-gutter items-center z-10 max-w-7xl">
+        <div class="lg:col-span-6 space-y-stack-lg py-12">
+            <div class="inline-block px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary font-semibold text-xs tracking-wider uppercase animate-fade-in">
+                ESTÉTICA DE LUJO
+            </div>
+            <h1 class="font-bold text-4xl md:text-5xl lg:text-6xl text-on-surface max-w-xl leading-tight">
+                Tu estilo comienza aquí
+            </h1>
+            <p class="text-base md:text-lg text-on-surface-variant max-w-lg leading-relaxed">
+                Experimenta la maestría de nuestros expertos en un ambiente diseñado para tu relajación. Transformamos tu visión en una realidad sofisticada.
+            </p>
+            <div class="flex flex-col sm:flex-row gap-stack-md pt-4">
+                <a href="/reserva" class="inline-flex items-center justify-center gap-2 border-[2px] border-primary-container bg-primary-container text-white px-10 py-5 rounded-xl font-bold text-lg hover:bg-transparent hover:text-primary-container transition-all duration-300 shadow-lg hover:shadow-primary-container/20 active:scale-95 group">
+                    Reservar Turno
+                    <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                </a>
+            </div>
+        </div>
+        <div class="lg:col-span-6 relative">
+            <div class="aspect-[4/5] rounded-[2rem] overflow-hidden shadow-2xl transform lg:rotate-3 hover:rotate-0 transition-transform duration-700">
+                <img alt="Luxury Salon Interior" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD7O9LYtbg_iNq0FoSUPKYGnZYgudgBFjDr-sNAHdjhQFY9ElhTk7o4KVZ_eDqNfjY-fijBsVXzZcGSqTFYvHOlLIQb9O8JKo0YmmvmoAMLki5aPy6PFMmbAGy3cy8DRu5zOQHFd1MQWuEEBmMTn3Cy9g0FOMklj3DDlvTE4s7oGPrBCZZI0gUR3wiWaLREcMS1I-bJusQlKWIEXYZqPRpPp9pR51pqZ6BzIoGMXRTd7SX6qsImgVFMycdXf_FlNJS2od26GWK4rDhb"/>
+            </div>
+            <!-- Floating Badge -->
+            <div class="absolute -bottom-6 -left-6 bg-white p-6 rounded-2xl shadow-xl border border-border-subtle hidden md:block animate-bounce-slow">
+                <div class="flex items-center gap-4">
+                    <div class="bg-primary-container p-3 rounded-full text-white">
+                        <span class="material-symbols-outlined">star</span>
+                    </div>
+                    <div>
+                        <div class="font-bold text-sm text-on-surface">Puntuación 4.9/5</div>
+                        <div class="text-xs text-on-surface-variant">Basado en +500 clientes</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Background Decoration -->
+    <div class="absolute top-0 right-0 w-1/3 h-full bg-primary/5 -skew-x-12 transform origin-top translate-x-1/2"></div>
+</section>
+
+<!-- Services Section -->
+<section class="py-24 bg-surface" id="services">
+    <div class="container mx-auto px-container-margin-mobile md:px-container-margin-desktop max-w-7xl">
+        <div class="flex flex-col md:flex-row justify-between items-end mb-16 gap-stack-md">
+            <div class="max-w-2xl">
+                <h2 class="font-bold text-3xl text-on-surface mb-4">Nuestros Servicios</h2>
+                <p class="text-sm md:text-base text-on-surface-variant">Ofrecemos soluciones personalizadas para resaltar tu belleza natural con las técnicas más avanzadas del mercado.</p>
+            </div>
+            <a class="font-semibold text-sm text-primary flex items-center gap-2 hover:underline" href="/reserva">
+                Ver todos los servicios <span class="material-symbols-outlined text-[18px]">open_in_new</span>
+            </a>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-gutter" id="services-container">
+            <!-- Dynamic Services will load here or fallback to seeded cards -->
+            <!-- Corte Card -->
+            <div class="group bg-surface-container-lowest border border-border-subtle rounded-[1.5rem] p-8 shadow-[0px_4px_20px_rgba(0,0,0,0.04)] hover:-translate-y-2 transition-all duration-500 relative overflow-hidden">
+                <div class="w-1 absolute left-0 top-0 h-full bg-primary-container opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <div class="mb-6 p-4 bg-primary/5 rounded-2xl w-fit group-hover:bg-primary-container group-hover:text-white transition-colors duration-500">
+                    <span class="material-symbols-outlined text-[32px]">content_cut</span>
+                </div>
+                <h3 class="font-bold text-xl text-on-surface mb-3">Corte Premium</h3>
+                <p class="text-sm text-on-surface-variant mb-6">Desde clásicos atemporales hasta tendencias vanguardistas, diseñamos tu estilo.</p>
+                <div class="flex items-center justify-between">
+                    <span class="font-bold text-primary">$4.500</span>
+                    <a href="/reserva" class="p-2 rounded-full border border-border-subtle group-hover:bg-primary-container group-hover:border-primary-container group-hover:text-white transition-all">
+                        <span class="material-symbols-outlined">add</span>
+                    </a>
+                </div>
+            </div>
+            <!-- Color Card -->
+            <div class="group bg-surface-container-lowest border border-border-subtle rounded-[1.5rem] p-8 shadow-[0px_4px_20px_rgba(0,0,0,0.04)] hover:-translate-y-2 transition-all duration-500 relative overflow-hidden">
+                <div class="w-1 absolute left-0 top-0 h-full bg-primary-container opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <div class="mb-6 p-4 bg-primary/5 rounded-2xl w-fit group-hover:bg-primary-container group-hover:text-white transition-colors duration-500">
+                    <span class="material-symbols-outlined text-[32px]">palette</span>
+                </div>
+                <h3 class="font-bold text-xl text-on-surface mb-3">Color &amp; Balayage</h3>
+                <p class="text-sm text-on-surface-variant mb-6">Balayage, reflejos y coloración experta para dar vida y brillo a tu cabello.</p>
+                <div class="flex items-center justify-between">
+                    <span class="font-bold text-primary">$8.200</span>
+                    <a href="/reserva" class="p-2 rounded-full border border-border-subtle group-hover:bg-primary-container group-hover:border-primary-container group-hover:text-white transition-all">
+                        <span class="material-symbols-outlined">add</span>
+                    </a>
+                </div>
+            </div>
+            <!-- Barba Card -->
+            <div class="group bg-surface-container-lowest border border-border-subtle rounded-[1.5rem] p-8 shadow-[0px_4px_20px_rgba(0,0,0,0.04)] hover:-translate-y-2 transition-all duration-500 relative overflow-hidden">
+                <div class="w-1 absolute left-0 top-0 h-full bg-primary-container opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <div class="mb-6 p-4 bg-primary/5 rounded-2xl w-fit group-hover:bg-primary-container group-hover:text-white transition-colors duration-500">
+                    <span class="material-symbols-outlined text-[32px]">face</span>
+                </div>
+                <h3 class="font-bold text-xl text-on-surface mb-3">Tratamiento Barba</h3>
+                <p class="text-sm text-on-surface-variant mb-6">Tratamientos completos de barbería, perfilado y cuidado facial masculino.</p>
+                <div class="flex items-center justify-between">
+                    <span class="font-bold text-primary">$3.000</span>
+                    <a href="/reserva" class="p-2 rounded-full border border-border-subtle group-hover:bg-primary-container group-hover:border-primary-container group-hover:text-white transition-all">
+                        <span class="material-symbols-outlined">add</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="py-16 bg-surface-container-high mx-container-margin-mobile md:mx-container-margin-desktop rounded-[2.5rem] mb-24 overflow-hidden relative">
+    <div class="absolute top-0 left-0 w-full h-full opacity-20 pointer-events-none">
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary rounded-full blur-[120px]"></div>
+    </div>
+    <div class="container mx-auto px-8 relative z-10 text-center space-y-stack-md">
+        <h2 class="font-bold text-3xl md:text-4xl text-on-surface">¿Listo para renovarte?</h2>
+        <p class="text-base md:text-lg text-on-surface-variant max-w-2xl mx-auto">Reserva tu turno ahora y asegura tu espacio con nuestros mejores estilistas.</p>
+        <div class="pt-8">
+            <a href="/reserva" class="inline-flex bg-primary text-white px-12 py-5 rounded-2xl font-bold text-xl shadow-xl shadow-primary/30 hover:scale-105 active:scale-95 transition-all duration-300">
+                Agendar Cita Hoy
+            </a>
+        </div>
+    </div>
+</section>
+
+<script>
+    // Dinámicamente cargar los servicios desde la API para que coincidan con la DB real
+    fetch('/api/servicios')
+        .then(res => res.json())
+        .then(servicios => {
+            if (servicios && servicios.length > 0) {
+                const container = document.getElementById('services-container');
+                container.innerHTML = '';
+                
+                // Mapeo de iconos segun nombre
+                const icons = {
+                    'Corte Premium': 'content_cut',
+                    'Color & Balayage': 'palette',
+                    'Tratamiento Barba': 'face',
+                    'Tratamiento Facial': 'spa'
+                };
+                
+                servicios.forEach(s => {
+                    const iconName = icons[s.nombre] || 'spa';
+                    const card = `
+                        <div class="group bg-surface-container-lowest border border-border-subtle rounded-[1.5rem] p-8 shadow-[0px_4px_20px_rgba(0,0,0,0.04)] hover:-translate-y-2 transition-all duration-500 relative overflow-hidden">
+                            <div class="w-1 absolute left-0 top-0 h-full bg-primary-container opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                            <div class="mb-6 p-4 bg-primary/5 rounded-2xl w-fit group-hover:bg-primary-container group-hover:text-white transition-colors duration-500">
+                                <span class="material-symbols-outlined text-[32px]">${iconName}</span>
+                            </div>
+                            <h3 class="font-bold text-xl text-on-surface mb-3">${s.nombre}</h3>
+                            <p class="text-sm text-on-surface-variant mb-6">${s.descripcion}</p>
+                            <div class="flex items-center justify-between">
+                                <span class="font-bold text-primary">$${s.precio.toLocaleString('es-AR')}</span>
+                                <a href="/reserva" class="p-2 rounded-full border border-border-subtle group-hover:bg-primary-container group-hover:border-primary-container group-hover:text-white transition-all">
+                                    <span class="material-symbols-outlined">add</span>
+                                </a>
+                            </div>
+                        </div>
+                    `;
+                    container.insertAdjacentHTML('beforeend', card);
+                });
+            }
+        })
+        .catch(err => console.error("Error al cargar servicios base:", err));
+</script>
+{% endblock %}

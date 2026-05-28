@@ -1,0 +1,253 @@
+{% extends 'base.html' %}
+
+{% block title %}Gestionar Servicios - Lumière Salon{% endblock %}
+
+{% block content %}
+<main class="w-full max-w-7xl mx-auto px-container-margin-mobile md:px-container-margin-desktop py-stack-lg flex-grow">
+    
+    <!-- Header -->
+    <section class="mb-stack-lg mt-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-stack-md">
+        <div>
+            <h1 class="font-bold text-3xl text-on-surface">Catálogo de Servicios</h1>
+            <p class="text-sm text-secondary font-semibold">Crea, edita y elimina los servicios disponibles en la reserva pública</p>
+        </div>
+        <button onclick="openServiceModal()" class="w-full sm:w-auto bg-primary-container text-white px-6 py-3 rounded-xl font-bold text-sm shadow-lg shadow-primary-container/20 hover:scale-[1.01] active:scale-95 transition-all duration-300 flex items-center justify-center gap-2">
+            <span class="material-symbols-outlined text-lg">add_circle</span>
+            Añadir Servicio
+        </button>
+    </section>
+
+    <!-- Services Grid -->
+    <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-gutter" id="services-crud-container">
+        <!-- Carga dinámica -->
+        <div class="col-span-full text-center py-16 text-secondary">
+            <span class="material-symbols-outlined animate-spin text-4xl">sync</span>
+            <p class="mt-2 text-sm">Cargando catálogo de servicios...</p>
+        </div>
+    </section>
+</main>
+
+<!-- Modal: Crear/Editar Servicio (Hidden by default) -->
+<div id="service-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md hidden transition-all duration-300">
+    <div class="bg-white rounded-2xl p-6 md:p-8 max-w-lg w-full shadow-2xl space-y-6 transform scale-95 transition-all">
+        <div class="flex justify-between items-center">
+            <h3 id="modal-title" class="font-bold text-xl text-on-surface flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary">add_circle</span>
+                Añadir Nuevo Servicio
+            </h3>
+            <button onclick="closeServiceModal()" class="material-symbols-outlined p-1.5 hover:bg-surface-variant/50 rounded-full text-secondary">close</button>
+        </div>
+
+        <form id="service-form" class="space-y-4">
+            <input type="hidden" id="service-id" />
+            
+            <div class="space-y-1">
+                <label class="font-bold text-xs text-on-surface-variant block">Nombre del servicio *</label>
+                <input id="service-name" class="w-full px-3.5 py-2.5 rounded-lg border border-border-subtle bg-white text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary" type="text" placeholder="Ej. Corte y Peinado" required />
+            </div>
+
+            <div class="space-y-1">
+                <label class="font-bold text-xs text-on-surface-variant block">Descripción</label>
+                <textarea id="service-desc" rows="3" class="w-full px-3.5 py-2.5 rounded-lg border border-border-subtle bg-white text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary resize-none" placeholder="Describe brevemente qué incluye este servicio..."></textarea>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="space-y-1">
+                    <label class="font-bold text-xs text-on-surface-variant block">Duración (minutos) *</label>
+                    <input id="service-duration" class="w-full px-3.5 py-2.5 rounded-lg border border-border-subtle bg-white text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary" type="number" min="1" placeholder="Ej. 45" required />
+                </div>
+                <div class="space-y-1">
+                    <label class="font-bold text-xs text-on-surface-variant block">Precio ($ ARS) *</label>
+                    <input id="service-price" class="w-full px-3.5 py-2.5 rounded-lg border border-border-subtle bg-white text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary" type="number" min="0" step="100" placeholder="Ej. 4500" required />
+                </div>
+            </div>
+
+            <div class="pt-4 flex gap-2">
+                <button type="button" onclick="closeServiceModal()" class="w-1/3 border border-border-subtle hover:bg-surface text-secondary py-3 rounded-xl font-bold transition-all text-sm">
+                    Cancelar
+                </button>
+                <button type="submit" class="w-2/3 bg-primary-container text-white py-3 rounded-xl font-bold shadow-lg shadow-primary-container/20 hover:scale-[1.01] active:scale-95 transition-all text-sm flex items-center justify-center gap-2">
+                    <span class="material-symbols-outlined text-lg">check_circle</span>
+                    Guardar Servicio
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    let services = [];
+
+    document.addEventListener("DOMContentLoaded", () => {
+        loadServices();
+    });
+
+    function loadServices() {
+        const container = document.getElementById("services-crud-container");
+        fetch('/api/servicios')
+            .then(res => res.json())
+            .then(data => {
+                services = data;
+                container.innerHTML = '';
+                
+                if (services.length === 0) {
+                    container.innerHTML = `
+                        <div class="col-span-full text-center py-16 bg-primary/5 rounded-2xl border border-primary/10">
+                            <span class="material-symbols-outlined text-secondary text-5xl mb-2">dry_cleaning</span>
+                            <p class="font-bold text-on-surface">No hay servicios en el catálogo</p>
+                            <p class="text-xs text-secondary mt-1">Crea tu primer servicio usando el botón superior.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                const icons = {
+                    'Corte Premium': 'content_cut',
+                    'Color & Balayage': 'palette',
+                    'Tratamiento Barba': 'face',
+                    'Tratamiento Facial': 'spa'
+                };
+
+                services.forEach(s => {
+                    const iconName = icons[s.nombre] || 'spa';
+                    const card = `
+                        <div class="group bg-white border border-border-subtle rounded-2xl p-6 shadow-[0px_4px_20px_rgba(0,0,0,0.02)] hover:shadow-md transition-all flex flex-col justify-between relative overflow-hidden">
+                            <div class="w-1 absolute left-0 top-0 h-full bg-primary-container opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                            
+                            <div>
+                                <div class="flex justify-between items-start mb-4">
+                                    <div class="p-3 bg-primary/5 rounded-xl text-primary-container group-hover:bg-primary-container group-hover:text-white transition-colors duration-300">
+                                        <span class="material-symbols-outlined text-xl">${iconName}</span>
+                                    </div>
+                                    <div class="flex gap-1">
+                                        <button onclick="editService(${s.id})" class="p-1.5 hover:bg-surface-variant/50 rounded-lg text-secondary hover:text-primary transition-all material-symbols-outlined text-lg" title="Editar">
+                                            edit
+                                        </button>
+                                        <button onclick="deleteService(${s.id})" class="p-1.5 hover:bg-error-container/20 rounded-lg text-secondary hover:text-status-error transition-all material-symbols-outlined text-lg" title="Eliminar">
+                                            delete
+                                        </button>
+                                    </div>
+                                </div>
+                                <h3 class="font-bold text-lg text-on-surface mb-2">${s.nombre}</h3>
+                                <p class="text-xs text-secondary leading-relaxed mb-4 min-h-[40px]">${s.descripcion || 'Sin descripción disponible.'}</p>
+                            </div>
+
+                            <div class="border-t border-border-subtle pt-4 mt-2 flex justify-between items-center text-xs font-semibold text-secondary">
+                                <span class="flex items-center gap-1">
+                                    <span class="material-symbols-outlined text-base">schedule</span>
+                                    ${s.duracion} minutos
+                                </span>
+                                <span class="text-sm font-bold text-primary">
+                                    $${s.precio.toLocaleString('es-AR')}
+                                </span>
+                            </div>
+                        </div>
+                    `;
+                    container.insertAdjacentHTML('beforeend', card);
+                });
+            })
+            .catch(err => {
+                container.innerHTML = '<p class="text-center text-error col-span-full py-8">Error al cargar servicios.</p>';
+            });
+    }
+
+    function openServiceModal() {
+        document.getElementById('modal-title').innerText = 'Añadir Nuevo Servicio';
+        document.getElementById('service-id').value = '';
+        document.getElementById('service-form').reset();
+        
+        const modal = document.getElementById('service-modal');
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+            modal.querySelector('.transform').classList.remove('scale-95');
+            modal.querySelector('.transform').classList.add('scale-100');
+        }, 50);
+    }
+
+    function closeServiceModal() {
+        const modal = document.getElementById('service-modal');
+        modal.querySelector('.transform').classList.remove('scale-100');
+        modal.querySelector('.transform').classList.add('scale-95');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+        }, 200);
+        document.getElementById('service-form').reset();
+    }
+
+    function editService(id) {
+        const s = services.find(item => item.id === id);
+        if (!s) return;
+
+        document.getElementById('modal-title').innerText = 'Editar Servicio';
+        document.getElementById('service-id').value = s.id;
+        document.getElementById('service-name').value = s.nombre;
+        document.getElementById('service-desc').value = s.descripcion || '';
+        document.getElementById('service-duration').value = s.duracion;
+        document.getElementById('service-price').value = s.precio;
+
+        const modal = document.getElementById('service-modal');
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+            modal.querySelector('.transform').classList.remove('scale-95');
+            modal.querySelector('.transform').classList.add('scale-100');
+        }, 50);
+    }
+
+    function deleteService(id) {
+        if (!confirm("¿Estás seguro de que deseas eliminar este servicio? No podrá ser eliminado si tiene turnos activos vinculados.")) return;
+        
+        fetch(`/api/servicios/${id}`, {
+            method: 'DELETE'
+        })
+        .then(res => res.json().then(data => ({ status: res.status, body: data })))
+        .then(res => {
+            if (res.status === 200 && res.body.success) {
+                loadServices();
+            } else {
+                alert(res.body.error || 'No se pudo eliminar el servicio.');
+            }
+        })
+        .catch(err => {
+            console.error("Error al eliminar servicio:", err);
+            alert('Error en el servidor al intentar eliminar el servicio.');
+        });
+    }
+
+    // Submit del formulario (Creación o Edición)
+    document.getElementById('service-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+
+        const id = document.getElementById('service-id').value;
+        const nombre = document.getElementById('service-name').value;
+        const descripcion = document.getElementById('service-desc').value;
+        const duracion = parseInt(document.getElementById('service-duration').value);
+        const precio = parseFloat(document.getElementById('service-price').value);
+
+        const payload = { nombre, descripcion, duracion, precio };
+        
+        const url = id ? `/api/servicios/${id}` : '/api/servicios';
+        const method = id ? 'PUT' : 'POST';
+
+        fetch(url, {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                closeServiceModal();
+                loadServices();
+            } else {
+                alert(data.error || 'Ocurrió un error al guardar el servicio.');
+            }
+        })
+        .catch(err => {
+            console.error("Error al guardar servicio:", err);
+            alert('Error en el servidor al intentar guardar el servicio.');
+        });
+    });
+</script>
+{% endblock %}
