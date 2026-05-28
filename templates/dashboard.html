@@ -7,6 +7,8 @@
     .timeline-grid {
         display: grid;
         grid-template-columns: 80px 1fr;
+        height: 90px;
+        position: relative;
     }
     .custom-scrollbar::-webkit-scrollbar {
         width: 6px;
@@ -361,7 +363,8 @@
             let rightSideContent = '';
             
             if (turnosEnSlot.length > 0) {
-                turnosEnSlot.forEach(t => {
+                const count = turnosEnSlot.length;
+                turnosEnSlot.forEach((t, index) => {
                     let borderClass = 'border-l-primary-container'; // Pendiente
                     let stateBadge = `<span class="px-2 py-0.5 bg-primary/10 text-primary rounded-full text-[10px] font-bold">Pendiente</span>`;
                     
@@ -394,40 +397,49 @@
                     // Letra inicial para el avatar
                     const initials = `${t.cliente_nombre[0]}${t.cliente_apellido[0]}`.toUpperCase();
 
-                    // Altura visual acorde a la duración
-                    let cardHeightStyle = 'min-h-[80px]';
-                    if (t.servicio_duracion > 30) {
-                        cardHeightStyle = 'min-h-[105px] py-5';
+                    // Calcular altura y posicionamiento horizontal para paralelos
+                    // Cada slot mide 90px de alto, la tarjeta ocupa proporcionalmente su duración
+                    const cardHeight = Math.round((t.servicio_duracion / 30) * 90) - 16;
+                    
+                    // Si hay paralelos (dos o más turnos en el mismo slot), dividir el ancho
+                    let positionStyle = '';
+                    if (count > 1) {
+                        const widthPct = Math.floor(100 / count) - 2;
+                        const leftPct = Math.floor((100 / count) * index);
+                        positionStyle = `position: absolute; top: 8px; left: calc(${leftPct}% + 16px); width: calc(${widthPct}% - 8px); height: ${cardHeight}px; z-index: 20;`;
+                    } else {
+                        positionStyle = `position: absolute; top: 8px; left: 16px; right: 16px; height: ${cardHeight}px; z-index: 20;`;
                     }
 
                     rightSideContent += `
-                        <div class="bg-surface-container-low/40 border border-border-subtle rounded-xl p-4 shadow-sm hover:shadow-md transition-all flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 max-w-2xl border-l-4 ${borderClass} relative group mt-1 ${cardHeightStyle}">
-                            <div class="flex items-center gap-4">
-                                <div class="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm shadow-sm border border-primary/20 flex-shrink-0">
+                        <div class="bg-white border border-border-subtle rounded-xl p-4 shadow-sm hover:shadow-md hover:translate-y-[-2px] transition-all flex flex-col justify-between max-w-2xl border-l-4 ${borderClass} group" style="${positionStyle}">
+                            <div class="flex items-start gap-3 h-full overflow-hidden">
+                                <div class="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs shadow-sm border border-primary/20 flex-shrink-0">
                                     ${initials}
                                 </div>
-                                <div>
-                                    <div class="flex flex-wrap items-center gap-2">
-                                        <h4 class="font-bold text-sm text-on-surface">${t.cliente_nombre} ${t.cliente_apellido}</h4>
+                                <div class="min-w-0 flex-grow">
+                                    <div class="flex flex-wrap items-center gap-1.5">
+                                        <h4 class="font-bold text-xs text-on-surface truncate">${t.cliente_nombre} ${t.cliente_apellido}</h4>
                                         ${stateBadge}
                                         ${overlapBadge}
                                     </div>
-                                    <p class="text-xs text-secondary mt-0.5">${t.servicio_nombre} (${t.servicio_duracion} min) • <span class="text-on-surface font-semibold">${t.cliente_telefono}</span></p>
+                                    <p class="text-[10px] text-secondary mt-0.5 truncate">${t.servicio_nombre} (${t.servicio_duracion} min)</p>
+                                    <p class="text-[10px] text-on-surface font-semibold truncate mt-0.5">${t.cliente_telefono}</p>
                                 </div>
                             </div>
                             
-                            <div class="flex gap-1.5 sm:opacity-0 group-hover:opacity-100 transition-opacity w-full sm:w-auto mt-2 sm:mt-0 justify-end flex-shrink-0">
+                            <div class="flex gap-1 justify-end mt-1 pt-1 border-t border-border-subtle opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
                                 ${t.estado === 'pendiente' ? `
-                                    <button onclick="quickUpdateStatus(${t.id}, 'confirmado')" class="px-3 py-1.5 bg-status-success/10 text-status-success hover:bg-status-success hover:text-white font-bold text-xs rounded-lg transition-all" title="Confirmar Turno">
+                                    <button onclick="quickUpdateStatus(${t.id}, 'confirmado')" class="px-2 py-1 bg-status-success/10 text-status-success hover:bg-status-success hover:text-white font-bold text-[10px] rounded transition-all" title="Confirmar Turno">
                                         Confirmar
                                     </button>
                                 ` : ''}
                                 ${t.estado !== 'cancelado' ? `
-                                    <button onclick="quickUpdateStatus(${t.id}, 'cancelado')" class="p-1.5 text-status-error hover:bg-error-container/20 rounded-lg material-symbols-outlined text-lg" title="Cancelar Turno">
+                                    <button onclick="quickUpdateStatus(${t.id}, 'cancelado')" class="p-1 text-status-error hover:bg-error-container/20 rounded material-symbols-outlined text-base transition-all" title="Cancelar Turno">
                                         close
                                     </button>
                                 ` : ''}
-                                <button onclick="deleteTurno(${t.id})" class="p-1.5 text-secondary hover:bg-surface-variant/40 rounded-lg material-symbols-outlined text-lg" title="Eliminar definitivamente">
+                                <button onclick="deleteTurno(${t.id})" class="p-1 text-secondary hover:bg-surface-variant/40 rounded material-symbols-outlined text-base transition-all" title="Eliminar definitivamente">
                                     delete
                                 </button>
                             </div>
@@ -437,23 +449,12 @@
             } else {
                 // Slot libre: ver si está ocupado por un servicio en curso que inició antes
                 if (slotMins < maxOccupiedUntilMins) {
-                    const endsTime = minutesToTime(maxOccupiedUntilMins);
-                    rightSideContent = `
-                        <div class="border border-border-subtle bg-bg-light/40 rounded-xl p-4 flex justify-between items-center h-16 max-w-2xl opacity-60">
-                            <div class="flex items-center gap-3 text-secondary text-xs">
-                                <span class="material-symbols-outlined text-base text-primary-container animate-pulse">pending</span>
-                                <div>
-                                    <span class="font-bold text-on-surface-variant">[En curso] ${occupyingServiceName}</span>
-                                    <span class="text-[10px] text-secondary">(${occupyingClientName})</span>
-                                </div>
-                            </div>
-                            <span class="text-[10px] bg-primary/10 text-primary px-2.5 py-0.5 rounded-full font-bold">Ocupado hasta ${endsTime} hs</span>
-                        </div>
-                    `;
+                    // Queda completamente vacío para que la tarjeta del bloque anterior cuelgue libremente sobre este espacio!
+                    rightSideContent = '';
                 } else {
                     // Completamente disponible
                     rightSideContent = `
-                        <div onclick="openAppointmentModal('${time}')" class="border border-dashed border-outline-variant rounded-xl p-4 flex items-center justify-center h-16 opacity-30 hover:opacity-100 hover:bg-primary/5 transition-all cursor-pointer group/add mt-1">
+                        <div onclick="openAppointmentModal('${time}')" class="border border-dashed border-outline-variant rounded-xl p-4 flex items-center justify-center h-[74px] opacity-30 hover:opacity-100 hover:bg-primary/5 transition-all cursor-pointer group/add">
                             <div class="flex items-center gap-2 text-secondary group-hover/add:text-primary transition-colors">
                                 <span class="material-symbols-outlined text-lg">add_circle</span>
                                 <span class="font-bold text-xs">Disponible</span>
@@ -464,9 +465,9 @@
             }
 
             const slotRow = `
-                <div class="timeline-grid h-auto py-3 relative border-b border-surface-variant/10">
+                <div class="timeline-grid border-b border-surface-variant/10">
                     <div class="py-2 text-right pr-6 font-bold text-xs text-secondary self-start">${time}</div>
-                    <div class="relative px-4 flex flex-col justify-center">
+                    <div class="relative px-4 h-full">
                         ${rightSideContent}
                     </div>
                 </div>
