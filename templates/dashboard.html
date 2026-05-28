@@ -165,11 +165,11 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <label class="font-bold text-xs text-on-surface-variant block mb-1">Fecha *</label>
-                    <input id="modal-date" class="w-full px-3.5 py-2.5 rounded-lg border border-border-subtle bg-white text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary" type="date" required readonly />
+                    <input id="modal-date" class="w-full px-3.5 py-2.5 rounded-lg border border-border-subtle bg-white text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary cursor-pointer text-on-surface" type="date" required />
                 </div>
                 <div>
                     <label class="font-bold text-xs text-on-surface-variant block mb-1">Horario *</label>
-                    <input id="modal-time" class="w-full px-3.5 py-2.5 rounded-lg border border-border-subtle bg-white text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary" type="time" required readonly />
+                    <input id="modal-time" class="w-full px-3.5 py-2.5 rounded-lg border border-border-subtle bg-white text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary cursor-pointer text-on-surface" type="time" required />
                 </div>
             </div>
 
@@ -207,7 +207,10 @@
     });
 
     function formatDateString(date) {
-        return date.toISOString().split('T')[0];
+        const year = date.getFullYear();
+        const month = (date.getMonth() + 1).toString().padStart(2, '0');
+        const day = date.getDate().toString().padStart(2, '0');
+        return `${year}-${month}-${day}`;
     }
 
     function changeDay(offset) {

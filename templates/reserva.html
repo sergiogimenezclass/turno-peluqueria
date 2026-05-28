@@ -254,7 +254,7 @@
         const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
         
         let added = 0;
-        let offset = 1; // Comenzar a partir de mañana
+        let offset = 0; // Comenzar desde hoy
         
         while (added < 10) {
             const d = new Date();
@@ -265,7 +265,13 @@
                 const dayLabel = days[d.getDay()];
                 const dayNum = d.getDate();
                 const monthLabel = months[d.getMonth()];
-                const formattedDate = d.toISOString().split('T')[0]; // YYYY-MM-DD
+                
+                // Formateador de fecha local robusto YYYY-MM-DD libre de desfases horarios
+                const year = d.getFullYear();
+                const month = (d.getMonth() + 1).toString().padStart(2, '0');
+                const day = d.getDate().toString().padStart(2, '0');
+                const formattedDate = `${year}-${month}-${day}`;
+                
                 const fullLabel = `${dayLabel} ${dayNum} ${monthLabel}`;
                 
                 const card = `
