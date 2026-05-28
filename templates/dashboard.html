@@ -336,7 +336,79 @@
             slotTimes.push(`${hStr}:30`);
         }
 
-        // Variables para controlar ocupaciones de servicios en curso
+        // ==========================================
+        // ALGORITMO DE DISTRIBUCIÓN DE CALENDARIO (Google Calendar Style)
+        // ==========================================
+        
+        // 1. Filtrar turnos activos del día y calcular minutos de inicio y fin
+        const turnosActivos = turnos
+            .filter(t => t.estado !== 'cancelado')
+            .map(t => {
+                const start = timeToMinutes(t.hora);
+                return {
+                    ...t,
+                    start: start,
+                    end: start + t.servicio_duracion,
+                    col: -1,      // Columna asignada en el grupo de solapamiento
+                    totalCols: 1  // Total de columnas en el grupo de solapamiento
+                };
+            });
+
+        // Ordenar por hora de inicio ascendente; si coinciden, por hora de fin descendente (el más largo primero)
+        turnosActivos.sort((a, b) => {
+            if (a.start !== b.start) return a.start - b.start;
+            return b.end - a.end;
+        });
+
+        // 2. Agrupar turnos que se solapan temporalmente (directa o indirectamente) en "grupos de colisión"
+        const grupos = [];
+        turnosActivos.forEach(t => {
+            // Buscar si este turno se solapa con AL MENOS un turno de algún grupo existente
+            let grupoEncontrado = null;
+            for (let g of grupos) {
+                const solapa = g.some(ot => t.start < ot.end && t.end > ot.start);
+                if (solapa) {
+                    grupoEncontrado = g;
+                    break;
+                }
+            }
+            if (grupoEncontrado) {
+                grupoEncontrado.push(t);
+            } else {
+                grupos.push([t]);
+            }
+        });
+
+        // 3. Asignar columnas horizontales a los turnos dentro de cada grupo para que no se pisen
+        grupos.forEach(grupo => {
+            const columnas = []; // Cada entrada es un array de turnos que no se solapan en la misma columna
+            grupo.forEach(t => {
+                let colAsignada = -1;
+                for (let i = 0; i < columnas.length; i++) {
+                    const col = columnas[i];
+                    // Un turno puede ir en esta columna si no se solapa con ningún otro turno de esta columna
+                    const tieneSolapamiento = col.some(ot => t.start < ot.end && t.end > ot.start);
+                    if (!tieneSolapamiento) {
+                        colAsignada = i;
+                        col.push(t);
+                        break;
+                    }
+                }
+                // Si no cabe en ninguna columna existente, crear una nueva columna
+                if (colAsignada === -1) {
+                    columnas.push([t]);
+                    colAsignada = columnas.length - 1;
+                }
+                t.col = colAsignada;
+            });
+            
+            // A todos los turnos del grupo les asignamos la cantidad final de columnas de su grupo
+            grupo.forEach(t => {
+                t.totalCols = columnas.length;
+            });
+        });
+
+        // Variables para controlar ocupaciones de servicios en curso en la vista de slots disponibles
         let maxOccupiedUntilMins = 0;
         let occupyingServiceName = '';
         let occupyingClientName = '';
@@ -344,27 +416,22 @@
         slotTimes.forEach((time, index) => {
             const slotMins = timeToMinutes(time);
             
-            // Buscar si hay algún turno que inicie en este slot
-            const turnosEnSlot = turnos.filter(t => t.hora === time);
+            // Buscar turnos activos que inician exactamente en este slot de tiempo
+            const turnosEnSlot = turnosActivos.filter(t => t.hora === time);
             
-            // Si hay un turno activo agendado para este slot, actualizar límite de ocupación
+            // Si hay un turno activo agendado para este slot, actualizar límite de ocupación para ocultar "Disponible"
             turnosEnSlot.forEach(t => {
-                if (t.estado !== 'cancelado') {
-                    const tStart = timeToMinutes(t.hora);
-                    const tEnd = tStart + t.servicio_duracion;
-                    if (tEnd > maxOccupiedUntilMins) {
-                        maxOccupiedUntilMins = tEnd;
-                        occupyingServiceName = t.servicio_nombre;
-                        occupyingClientName = `${t.cliente_nombre} ${t.cliente_apellido}`;
-                    }
+                if (t.end > maxOccupiedUntilMins) {
+                    maxOccupiedUntilMins = t.end;
+                    occupyingServiceName = t.servicio_nombre;
+                    occupyingClientName = `${t.cliente_nombre} ${t.cliente_apellido}`;
                 }
             });
             
             let rightSideContent = '';
             
             if (turnosEnSlot.length > 0) {
-                const count = turnosEnSlot.length;
-                turnosEnSlot.forEach((t, tIdx) => {
+                turnosEnSlot.forEach(t => {
                     let borderClass = 'border-l-primary-container'; // Pendiente
                     let stateBadge = `<span class="px-2 py-0.5 bg-primary/10 text-primary rounded-full text-[9px] font-bold">Pendiente</span>`;
                     
@@ -376,35 +443,28 @@
                         stateBadge = `<span class="px-2 py-0.5 bg-secondary/10 text-secondary rounded-full text-[9px] font-bold">Cancelado</span>`;
                     }
 
-                    // Determinar si este turno se superpone con un servicio en curso que empezó ANTES
-                    const tStartMins = timeToMinutes(t.hora);
+                    // Calcular advertencia de superposición (si colisiona con algún turno que inicie a otra hora)
                     let overlapBadge = '';
-                    const otrosTurnosActivos = turnos.filter(ot => ot.id !== t.id && ot.estado !== 'cancelado');
-                    for (let ot of otrosTurnosActivos) {
-                        const otStart = timeToMinutes(ot.hora);
-                        const otEnd = otStart + ot.servicio_duracion;
-                        if (otStart < tStartMins && otEnd > tStartMins) {
-                            overlapBadge = `
-                                <span class="px-2 py-0.5 bg-status-error/10 text-status-error rounded-full text-[9px] font-bold flex items-center gap-0.5">
-                                    <span class="material-symbols-outlined text-[10px]">warning</span>
-                                    Superposición
-                                </span>
-                            `;
-                            break;
-                        }
+                    if (t.totalCols > 1) {
+                        overlapBadge = `
+                            <span class="px-2 py-0.5 bg-status-error/10 text-status-error rounded-full text-[9px] font-bold flex items-center gap-0.5">
+                                <span class="material-symbols-outlined text-[10px]">warning</span>
+                                Superposición
+                            </span>
+                        `;
                     }
 
                     // Letra inicial para el avatar
                     const initials = `${t.cliente_nombre[0]}${t.cliente_apellido[0]}`.toUpperCase();
 
-                    // Calcular altura y posicionamiento horizontal para paralelos
+                    // Altura proporcional a la duración
                     const cardHeight = Math.round((t.servicio_duracion / 30) * 90) - 16;
                     
-                    // Si hay paralelos (dos o más turnos en el mismo slot), dividir el ancho
+                    // Calcular el estilo de posicionamiento según las columnas de solapamiento calculadas
                     let positionStyle = '';
-                    if (count > 1) {
-                        const widthPct = Math.floor(100 / count) - 2;
-                        const leftPct = Math.floor((100 / count) * tIdx);
+                    if (t.totalCols > 1) {
+                        const widthPct = Math.floor(100 / t.totalCols) - 2;
+                        const leftPct = Math.floor((100 / t.totalCols) * t.col);
                         positionStyle = `position: absolute; top: 8px; left: calc(${leftPct}% + 16px); width: calc(${widthPct}% - 8px); height: ${cardHeight}px; z-index: 20;`;
                     } else {
                         positionStyle = `position: absolute; top: 8px; left: 16px; right: 16px; height: ${cardHeight}px; z-index: 20;`;
