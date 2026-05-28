@@ -341,7 +341,7 @@
         let occupyingServiceName = '';
         let occupyingClientName = '';
 
-        slotTimes.forEach(time => {
+        slotTimes.forEach((time, index) => {
             const slotMins = timeToMinutes(time);
             
             // Buscar si hay algún turno que inicie en este slot
@@ -364,16 +364,16 @@
             
             if (turnosEnSlot.length > 0) {
                 const count = turnosEnSlot.length;
-                turnosEnSlot.forEach((t, index) => {
+                turnosEnSlot.forEach((t, tIdx) => {
                     let borderClass = 'border-l-primary-container'; // Pendiente
-                    let stateBadge = `<span class="px-2 py-0.5 bg-primary/10 text-primary rounded-full text-[10px] font-bold">Pendiente</span>`;
+                    let stateBadge = `<span class="px-2 py-0.5 bg-primary/10 text-primary rounded-full text-[9px] font-bold">Pendiente</span>`;
                     
                     if (t.estado === 'confirmado') {
                         borderClass = 'border-l-status-success';
-                        stateBadge = `<span class="px-2 py-0.5 bg-status-success/10 text-status-success rounded-full text-[10px] font-bold">Confirmado</span>`;
+                        stateBadge = `<span class="px-2 py-0.5 bg-status-success/10 text-status-success rounded-full text-[9px] font-bold">Confirmado</span>`;
                     } else if (t.estado === 'cancelado') {
                         borderClass = 'border-l-secondary';
-                        stateBadge = `<span class="px-2 py-0.5 bg-secondary/10 text-secondary rounded-full text-[10px] font-bold">Cancelado</span>`;
+                        stateBadge = `<span class="px-2 py-0.5 bg-secondary/10 text-secondary rounded-full text-[9px] font-bold">Cancelado</span>`;
                     }
 
                     // Determinar si este turno se superpone con un servicio en curso que empezó ANTES
@@ -385,8 +385,8 @@
                         const otEnd = otStart + ot.servicio_duracion;
                         if (otStart < tStartMins && otEnd > tStartMins) {
                             overlapBadge = `
-                                <span class="px-2.5 py-0.5 bg-status-error/10 text-status-error rounded-full text-[10px] font-bold flex items-center gap-1">
-                                    <span class="material-symbols-outlined text-xs">warning</span>
+                                <span class="px-2 py-0.5 bg-status-error/10 text-status-error rounded-full text-[9px] font-bold flex items-center gap-0.5">
+                                    <span class="material-symbols-outlined text-[10px]">warning</span>
                                     Superposición
                                 </span>
                             `;
@@ -398,50 +398,76 @@
                     const initials = `${t.cliente_nombre[0]}${t.cliente_apellido[0]}`.toUpperCase();
 
                     // Calcular altura y posicionamiento horizontal para paralelos
-                    // Cada slot mide 90px de alto, la tarjeta ocupa proporcionalmente su duración
                     const cardHeight = Math.round((t.servicio_duracion / 30) * 90) - 16;
                     
                     // Si hay paralelos (dos o más turnos en el mismo slot), dividir el ancho
                     let positionStyle = '';
                     if (count > 1) {
                         const widthPct = Math.floor(100 / count) - 2;
-                        const leftPct = Math.floor((100 / count) * index);
+                        const leftPct = Math.floor((100 / count) * tIdx);
                         positionStyle = `position: absolute; top: 8px; left: calc(${leftPct}% + 16px); width: calc(${widthPct}% - 8px); height: ${cardHeight}px; z-index: 20;`;
                     } else {
                         positionStyle = `position: absolute; top: 8px; left: 16px; right: 16px; height: ${cardHeight}px; z-index: 20;`;
                     }
 
+                    // Determinar clases de diseño ultra-compactas según la duración para evitar desbordes de texto
+                    const dur = t.servicio_duracion;
+                    let cardPadding = 'p-4';
+                    let avatarSize = 'w-9 h-9 sm:w-10 sm:h-10 text-xs';
+                    let nameSize = 'text-xs sm:text-sm';
+                    let textSize = 'text-xs';
+                    let gapClass = 'gap-3';
+                    let prClass = 'pr-16';
+                    
+                    if (dur <= 30) {
+                        cardPadding = 'p-1.5 sm:p-2';
+                        avatarSize = 'w-6 h-6 text-[8px]';
+                        nameSize = 'text-[10px]';
+                        textSize = 'text-[8px]';
+                        gapClass = 'gap-1.5';
+                        prClass = 'pr-10';
+                    } else if (dur <= 45) {
+                        cardPadding = 'p-2 sm:p-2.5';
+                        avatarSize = 'w-7 h-7 text-[9px]';
+                        nameSize = 'text-[11px]';
+                        textSize = 'text-[9px]';
+                        gapClass = 'gap-2';
+                        prClass = 'pr-12';
+                    }
+
                     rightSideContent += `
-                        <div class="bg-white border border-border-subtle rounded-xl p-4 shadow-sm hover:shadow-md hover:translate-y-[-2px] transition-all flex flex-col justify-between max-w-2xl border-l-4 ${borderClass} group" style="${positionStyle}">
-                            <div class="flex items-start gap-3 h-full overflow-hidden">
-                                <div class="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs shadow-sm border border-primary/20 flex-shrink-0">
-                                    ${initials}
-                                </div>
-                                <div class="min-w-0 flex-grow">
-                                    <div class="flex flex-wrap items-center gap-1.5">
-                                        <h4 class="font-bold text-xs text-on-surface truncate">${t.cliente_nombre} ${t.cliente_apellido}</h4>
-                                        ${stateBadge}
-                                        ${overlapBadge}
-                                    </div>
-                                    <p class="text-[10px] text-secondary mt-0.5 truncate">${t.servicio_nombre} (${t.servicio_duracion} min)</p>
-                                    <p class="text-[10px] text-on-surface font-semibold truncate mt-0.5">${t.cliente_telefono}</p>
-                                </div>
-                            </div>
+                        <div class="bg-white border border-border-subtle rounded-xl ${cardPadding} shadow-sm hover:shadow-md hover:translate-y-[-2px] transition-all flex flex-col justify-center max-w-2xl border-l-4 ${borderClass} group relative" style="${positionStyle}">
                             
-                            <div class="flex gap-1 justify-end mt-1 pt-1 border-t border-border-subtle opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                            <!-- Botones flotantes absolutos en hover en la esquina superior derecha -->
+                            <div class="absolute top-1.5 right-1.5 flex gap-0.5 bg-white/95 backdrop-blur-sm p-0.5 rounded-lg border border-border-subtle shadow-sm opacity-0 group-hover:opacity-100 transition-opacity z-30">
                                 ${t.estado === 'pendiente' ? `
-                                    <button onclick="quickUpdateStatus(${t.id}, 'confirmado')" class="px-2 py-1 bg-status-success/10 text-status-success hover:bg-status-success hover:text-white font-bold text-[10px] rounded transition-all" title="Confirmar Turno">
+                                    <button onclick="quickUpdateStatus(${t.id}, 'confirmado')" class="px-1.5 py-0.5 bg-status-success/10 text-status-success hover:bg-status-success hover:text-white font-bold text-[8px] rounded transition-all" title="Confirmar Turno">
                                         Confirmar
                                     </button>
                                 ` : ''}
                                 ${t.estado !== 'cancelado' ? `
-                                    <button onclick="quickUpdateStatus(${t.id}, 'cancelado')" class="p-1 text-status-error hover:bg-error-container/20 rounded material-symbols-outlined text-base transition-all" title="Cancelar Turno">
+                                    <button onclick="quickUpdateStatus(${t.id}, 'cancelado')" class="p-0.5 text-status-error hover:bg-error-container/20 rounded material-symbols-outlined text-[13px] transition-all" title="Cancelar Turno">
                                         close
                                     </button>
                                 ` : ''}
-                                <button onclick="deleteTurno(${t.id})" class="p-1 text-secondary hover:bg-surface-variant/40 rounded material-symbols-outlined text-base transition-all" title="Eliminar definitivamente">
+                                <button onclick="deleteTurno(${t.id})" class="p-0.5 text-secondary hover:bg-surface-variant/40 rounded material-symbols-outlined text-[13px] transition-all" title="Eliminar definitivamente">
                                     delete
                                 </button>
+                            </div>
+
+                            <div class="flex items-center ${gapClass} w-full overflow-hidden">
+                                <div class="${avatarSize} rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold shadow-sm border border-primary/20 flex-shrink-0">
+                                    ${initials}
+                                </div>
+                                <div class="min-w-0 flex-grow ${prClass}">
+                                    <div class="flex flex-wrap items-center gap-1">
+                                        <h4 class="font-bold ${nameSize} text-on-surface truncate">${t.cliente_nombre} ${t.cliente_apellido}</h4>
+                                        ${stateBadge}
+                                        ${overlapBadge}
+                                    </div>
+                                    <p class="${textSize} text-secondary mt-0.5 truncate">${t.servicio_nombre} (${t.servicio_duracion} min)</p>
+                                    <p class="${textSize} text-on-surface font-semibold truncate mt-0.5">${t.cliente_telefono}</p>
+                                </div>
                             </div>
                         </div>
                     `;
@@ -465,7 +491,7 @@
             }
 
             const slotRow = `
-                <div class="timeline-grid border-b border-surface-variant/10">
+                <div class="timeline-grid border-b border-surface-variant/10" style="z-index: ${100 - index};">
                     <div class="py-2 text-right pr-6 font-bold text-xs text-secondary self-start">${time}</div>
                     <div class="relative px-4 h-full">
                         ${rightSideContent}
