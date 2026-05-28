@@ -407,8 +407,36 @@ def api_create_turno_admin():
         return jsonify({'error': 'Servicio no encontrado'}), 404
         
     duracion = servicio['duracion']
-    fecha_hora_str = f"{fecha} {horario}:00"
     
+    # Armar datetime propuesto
+    try:
+        fecha_hora_str = f"{fecha} {horario}:00"
+        fecha_hora_propuesta = datetime.strptime(fecha_hora_str, '%Y-%m-%d %H:%M:%S')
+    except ValueError:
+        return jsonify({'error': 'Formato de fecha u horario inválido'}), 400
+
+    # Validar superposición (incluso para administradores)
+    fecha_hora_fin_propuesta = fecha_hora_propuesta + timedelta(minutes=duracion)
+    
+    turnos_existentes = db.execute(
+        """
+        SELECT t.fecha_hora, s.duracion, (c.nombre || ' ' || c.apellido) as cliente_nombre
+        FROM turnos t 
+        JOIN servicios s ON t.servicio_id = s.id 
+        JOIN clientes c ON t.cliente_id = c.id
+        WHERE DATE(t.fecha_hora) = DATE(?) AND t.estado != 'cancelado'
+        """,
+        (fecha,)
+    ).fetchall()
+    
+    for t in turnos_existentes:
+        ocupado_inicio = datetime.strptime(t['fecha_hora'], '%Y-%m-%d %H:%M:%S')
+        ocupado_fin = ocupado_inicio + timedelta(minutes=t['duracion'])
+        if fecha_hora_propuesta < ocupado_fin and fecha_hora_fin_propuesta > ocupado_inicio:
+            return jsonify({
+                'error': f'El horario se superpone con el turno de {t["cliente_nombre"]} ({t["duracion"]} min)'
+            }), 400
+            
     # Registrar/Obtener cliente
     cliente = db.execute('SELECT * FROM clientes WHERE telefono = ?', (telefono,)).fetchone()
     if cliente:
